@@ -211,15 +211,22 @@ Top submissions from the last 24 hours, sourced from [hckrnews.com](https://hckr
 
 ---
 
-## 24. [Mercedes-Benz Physical Buttons Discussion Note]
-
-*Additional high-engagement stories not fully summarized above:*
-
-## 25. [Kimi K2.6 Just Beat Claude, GPT-5.5, and Gemini in a Coding Challenge](https://thinkpol.ca/2026/04/30/an-open-weights-chinese-model-just-beat-claude-gpt-5-5-and-gemini-in-a-programming-challenge/)
+## 24. [Kimi K2.6 Just Beat Claude, GPT-5.5, and Gemini in a Coding Challenge](https://thinkpol.ca/2026/04/30/an-open-weights-chinese-model-just-beat-claude-gpt-5-5-and-gemini-in-a-programming-challenge/)
 **218 points** | [374 comments](https://news.ycombinator.com/item?id=47993235)
 
 **Article:** An open-weights Chinese model, Kimi K2.6, reportedly outperformed Claude, GPT-5.5, and Gemini in a programming benchmark challenge, highlighting the rapid advancement of Chinese AI labs in code generation capabilities.
 
+**Discussion:** *(Comments not fetched)*
+
 ---
 
-*Fetching errors: Some articles from BBC, NYTimes, The Guardian, and drive.com.au could not be fully summarized due to access restrictions. Comment summaries were available for all stories.*
+## 25. [Investors Pile into Clean Energy as Iran War Drives Push for Energy Security](https://www.ft.com/content/9921f2b5-c910-4cec-a50f-cad453935a1a)
+**179 points** | [126 comments](https://news.ycombinator.com/item?id=47995125)
+
+**Article:** Investors are increasingly channeling funds into clean energy assets as geopolitical instability from the Iran conflict intensifies the push for energy independence and security across Western nations.
+
+**Discussion:** *(Comments not fetched)*
+
+---
+
+*Note: Some articles from BBC, NYTimes, The Guardian, and drive.com.au could not be fully summarized due to access restrictions. Comment summaries were available for all stories where noted.*
