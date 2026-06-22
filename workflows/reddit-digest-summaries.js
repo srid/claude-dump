@@ -2,7 +2,7 @@ export const meta = {
   name: 'reddit-digest-summaries',
   description: 'Two-phase Reddit digest: ONE throttled fetcher agent downloads every post thread (+ article) to a shared cache dir, then summarizer agents (one per post) read the cache in parallel and write content + discussion summaries. Serial fetching avoids the HTTP 429 that concurrent fetching triggers.',
   phases: [
-    { title: 'Fetch', detail: 'one agent: serial, throttled curl of every post (.json primary, .rss fallback) into the cache dir' },
+    { title: 'Fetch', detail: 'one agent: serial throttled curl of every post (.json primary, .rss fallback), self-healing 2nd pass for rate-limited threads, timestamped + time-bounded' },
     { title: 'Summarize', detail: 'one agent per post reads the cached thread/article and writes summaries (no network)' },
   ],
 }
@@ -61,25 +61,32 @@ Use this Chrome User-Agent for every curl:  UA="${UA}"
 Posts, in order:
 ${posts.map(p => `- id=${p.id} kind=${p.kind} permalink=${p.permalink}${p.external_url ? ` article=${p.external_url}` : ''}`).join('\n')}
 
-Write a SINGLE foreground bash script (one Bash call) following these rules EXACTLY — it must be deterministic, time-bounded, and self-logging:
+Write a SINGLE foreground bash script (one Bash call). It must be deterministic, time-bounded, self-logging, and SELF-HEALING under Reddit rate-limiting (HTTP 429 → empty bodies):
 
-TIMESTAMPED LOGGING (required — so progress and timing are always visible):
+TIMESTAMPED LOGGING (so progress/timing are always visible):
     LOG="${cache}/fetch.log"
     log(){ printf '[%s] %s\\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
-  Call log() for EVERY post (skip / fetch / ok / fail). Never run a detached/background fetch — keep it in the foreground so its output streams.
+  Call log() for every action. Keep it FOREGROUND (never detached) so output streams.
 
-HARD TIME BUDGET (this is what prevents a 30-minute hang):
-    DEADLINE=$(( $(date +%s) + 240 ))   # at most ~4 minutes of network work, total
-  Inside the loop, if [ "$(date +%s)" -ge "$DEADLINE" ], STOP hitting the network: log "deadline reached — skipping remaining" and mark every remaining un-cached post ok=false note="skipped(deadline)". Partial results always beat a hang.
+HARD TIME BUDGET (prevents any multi-minute hang):
+    DEADLINE=$(( $(date +%s) + 480 ))   # <=8 min total: generous enough to outlast a brief 429 window, still bounded
+  Anywhere, if [ "$(date +%s)" -ge "$DEADLINE" ], STOP hitting the network, log "deadline reached — skipping remaining", and mark every still-missing post ok=false note="skipped(deadline)". Partial always beats a hang.
 
-For each id, in order:
-  0. SKIP IF CACHED (resumable after a crash): if "${cache}/<id>.comments.rss" exists and is >200 bytes, OR "${cache}/<id>.comments.json" exists and starts with "[", then log "skip <id> (cached)" and DO NOT curl — just parse the existing file. (A re-run after a crash must never re-hammer Reddit.)
-  1. Else JSON first:  curl -sL --max-time 25 --compressed -A "$UA" "https://old.reddit.com/r/${sub}/comments/<id>/.json?raw_json=1&limit=200" -o "${cache}/<id>.comments.json"
-  2. If that file does NOT start with "[" (a 403 block page, expected from datacenter IPs), fall back to RSS:  curl -sL --max-time 25 --compressed -A "$UA" "https://old.reddit.com/r/${sub}/comments/<id>/.rss?limit=100" -o "${cache}/<id>.comments.rss"
-  3. BOUNDED RETRY: on HTTP 429 or an empty body, retry that ONE curl AT MOST ONCE after \`sleep 5\`, then give up on the post (log "fail <id>"). NEVER loop more than a single retry.
-  4. For link posts, also fetch the article (skip if "${cache}/<id>.article.html" exists and is >200 bytes).
-  5. sleep 2 ONLY in iterations where you actually hit the network (skipped posts need no pause).
-After the loop: log "done: fetched=N skipped=M failed=K elapsed=Ss".
+A thread counts as CACHED if "${cache}/<id>.comments.rss" is >200 bytes OR "${cache}/<id>.comments.json" starts with "[".
+
+PASS 1 — for each id in order:
+  - If already CACHED → log "skip <id> (cached)", no network. (Resumable after a crash; never re-hammer Reddit.)
+  - Else JSON first:  curl -sL --max-time 25 --compressed -A "$UA" "https://old.reddit.com/r/${sub}/comments/<id>/.json?raw_json=1&limit=200" -o "${cache}/<id>.comments.json"
+  - If that file does NOT start with "[" (a 403 block page, expected from datacenter IPs), fall back to RSS:  curl -sL --max-time 25 --compressed -A "$UA" "https://old.reddit.com/r/${sub}/comments/<id>/.rss?limit=100" -o "${cache}/<id>.comments.rss"
+  - On HTTP 429 / empty body, retry that one curl ONCE after \`sleep 8\`.
+  - For link posts, also fetch the article (skip if "${cache}/<id>.article.html" >200 bytes).
+  - \`sleep 3\` between posts that actually hit the network.
+
+PASS 2 — SELF-HEAL (the key fix for rate-limiting): after pass 1, build the list of ids STILL not CACHED. If non-empty and budget remains, Reddit was throttling, so recover gently:
+  - log "cooldown 20s before retrying N rate-limited threads"; \`sleep 20\`  (a brief pause lets Reddit's limiter recover)
+  - For each remaining id: try the RSS feed up to 2 more times, \`sleep 15\` between attempts, \`sleep 10\` between posts; save when you get >400 bytes. Respect the DEADLINE.
+
+After both passes: log "done: cached=N healed=H failed=K elapsed=Ss".
 
 Then parse each saved file (small python) to produce, per id:
   - valid *.comments.json → comments_count = element[0].data.children[0].data.num_comments, score = post score, counts_exact=true, note="json", ok=true

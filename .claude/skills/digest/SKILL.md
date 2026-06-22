@@ -20,10 +20,11 @@ to use. Output path is **source-first** for the current date/week:
 ## 2. Fetch the ranked listing
 - **`hn`** — HN Algolia API (top of last 24h, by points):
   `https://hn.algolia.com/api/v1/search?tags=story&numericFilters=created_at_i>{epoch_24h_ago}&hitsPerPage=30`
-- **Reddit (`nixos`, …)** — **primary:** `https://old.reddit.com/r/<sub>/top.json?t=week&limit=30`
+- **Reddit (`nixos`, `haskell`, …)** — **primary:** `https://old.reddit.com/r/<sub>/top.json?t=week&limit=30`
   with a real **Chrome UA**. If it 403s (datacenter/sandbox IPs are blocked), **fall back** to the
   RSS feed `https://www.reddit.com/r/<sub>/top.rss?t=week` and parse titles, permalinks, selftext,
-  and the external `[link]` href. (`WebFetch` cannot fetch Reddit — curl only.)
+  and the external `[link]` href. (`WebFetch` cannot fetch Reddit — curl only.) **Take the top 10
+  posts** for weekly Reddit digests.
 
 ## 3. Summarize (fan-out workflow)
 Run the source's committed workflow with the listing as `args`:
