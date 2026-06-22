@@ -40,9 +40,9 @@ This workflow file is versioned in the repo and improved over time (see [CLAUDE.
 2. Open a PR whose description contains **(a)** permalink(s) to the newly created file(s) on the
    `master` branch, and **(b)** the new file's content reproduced **inline**.
 3. **Merge the PR immediately.** Repo watchers receive an email notification and can click the PR
-   link to read the digest.
-4. **Additionally, email the full digest to the user** (Gmail) so they are notified directly.
-   *Requires a Gmail/email integration (MCP server or mail CLI) in the run environment. If none is
-   configured, skip this step and note it in the run summary.*
+   link to read the digest — this is the routine's notification mechanism.
+
+> Direct email (e.g. Gmail) is intentionally **not** part of this routine — the merged-PR
+> notification to repo watchers is sufficient.
 
 **Schedule:** intended to run **daily at 18:00**. See [CLAUDE.md](CLAUDE.md) for how this is wired.
