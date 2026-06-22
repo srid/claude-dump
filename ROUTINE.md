@@ -4,12 +4,13 @@ Repeatable digest routines for this repo. Files are laid out **source-first** �
 `<source>/YYYY/MM/DD.md` for dailies and `<source>/YYYY/Www.md` (ISO week) for weeklies — so each
 source is its own series for the planned static site (see [CLAUDE.md](CLAUDE.md)). Run one with the
 `/digest` skill (e.g. `/digest hn`) or just ask Claude to "run the `<name>` routine". Scheduling is
-done from a long-running Claude Code session via `/loop`.
+done from a long-running Claude Code session via `/loop` (times below are local).
 
-| Routine | Source | Cadence | Output | Workflow |
+| Routine | Source | Schedule | Output | Workflow |
 |---|---|---|---|---|
-| [`hn`](#hn--hacker-news-top-stories-digest) | [Hacker News](https://hckrnews.com/) | daily (18:00) | `hn/YYYY/MM/DD.md` | `workflows/hn-digest-summaries.js` |
-| [`nixos`](#nixos--rnixos-weekly-digest) | [r/NixOS](https://www.reddit.com/r/nixos/) | weekly | `nixos/YYYY/Www.md` | `workflows/reddit-digest-summaries.js` |
+| [`hn`](#hn--hacker-news-top-stories-digest) | [Hacker News](https://hckrnews.com/) | **daily, 18:00** | `hn/YYYY/MM/DD.md` | `workflows/hn-digest-summaries.js` |
+| [`nixos`](#reddit-weekly-digests--nixos-haskell) | [r/NixOS](https://www.reddit.com/r/nixos/) | **weekly, Mon 18:00** | `nixos/YYYY/Www.md` | `workflows/reddit-digest-summaries.js` |
+| [`haskell`](#reddit-weekly-digests--nixos-haskell) | [r/Haskell](https://www.reddit.com/r/haskell/) | **weekly, Mon 18:00** | `haskell/YYYY/Www.md` | `workflows/reddit-digest-summaries.js` |
 
 ---
 
@@ -52,20 +53,30 @@ This workflow file is versioned in the repo and improved over time (see [CLAUDE.
 > Direct email (e.g. Gmail) is intentionally **not** part of this routine — the merged-PR
 > notification to repo watchers is sufficient.
 
-**Schedule:** intended to run **daily at 18:00**. See [CLAUDE.md](CLAUDE.md) for how this is wired.
+**Schedule:** **daily at 18:00** (6pm local). See [CLAUDE.md](CLAUDE.md) for how this is wired.
 
 ---
 
-## `nixos` — r/NixOS Weekly Digest
+## Reddit weekly digests — `nixos`, `haskell`
 
-**Source:** <https://www.reddit.com/r/nixos/> — the top posts of the **last 7 days** (Reddit "top,
-this week"), sorted by score.
+A family of weekly subreddit digests that all share the same fetch strategy and the
+[`workflows/reddit-digest-summaries.js`](workflows/reddit-digest-summaries.js) workflow. To add
+another subreddit, add a row here and to the table at the top — no new workflow needed.
 
-**Output file:** `./nixos/YYYY/Www.md` for the run's ISO week (e.g. `nixos/2026/W26.md`; one file per week).
+| Routine | Subreddit | Output |
+|---|---|---|
+| `nixos` | [r/NixOS](https://www.reddit.com/r/nixos/) | `nixos/YYYY/Www.md` |
+| `haskell` | [r/Haskell](https://www.reddit.com/r/haskell/) | `haskell/YYYY/Www.md` |
 
-**Cadence:** **weekly** (r/NixOS doesn't move fast enough to warrant a daily digest).
+**Source:** the subreddit's top posts of the **last 7 days** (Reddit "top, this week", `t=week`),
+sorted by score.
 
-**Contents** — the top ~25 posts of the week. For each post:
+**Output file:** `./<name>/YYYY/Www.md` for the run's ISO week (e.g. `haskell/2026/W26.md`; one file
+per week).
+
+**Cadence:** **weekly, Mondays at 18:00** (these subreddits don't move fast enough for a daily digest).
+
+**Contents** — the **top 10 posts** of the week. For each post:
 
 - **Title**, linked to the post's link (the external URL for link posts; otherwise the Reddit post).
 - **Number of comments**, linked to the Reddit comments page (the post permalink).
@@ -86,12 +97,12 @@ this week"), sorted by score.
 
 **Implementation:** [`workflows/reddit-digest-summaries.js`](workflows/reddit-digest-summaries.js) is
 **two-phase** to respect Reddit's rate limiter: **(1) a single fetcher agent** downloads every post
-thread (and article) *serially, throttled* (`.json` primary, `.rss` fallback) into a shared cache
-dir; **(2) summarizer agents** — one per post — read that cache in parallel and return
-`{content_summary, discussion_summary, comments_count, counts_exact, score}`. Fetching concurrently
-(one agent per post) trips HTTP 429, which is why the fetch is centralized.
+thread (and article) *serially, throttled, time-bounded, with timestamped logs* (`.json` primary,
+`.rss` fallback) into a shared cache dir, skipping already-cached threads (resumable); **(2)
+summarizer agents** — one per post — read that cache in parallel. Fetching concurrently (one agent
+per post) trips HTTP 429, which is why the fetch is centralized.
 
 **Publish & notify:** same as `hn` — branch → commit → PR (master permalinks + file inline) → merge
 immediately.
 
-**Schedule:** intended to run **weekly**. Wire it up with `/loop` (self-paced to a weekly cadence).
+**Schedule:** **weekly on Mondays at 18:00** (6pm local), via `/loop` self-paced to the next Monday 18:00.

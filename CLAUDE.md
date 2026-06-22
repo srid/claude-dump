@@ -69,12 +69,15 @@ Don't reintroduce the old date-first `YYYY/MM/DD/<name>.md` paths.
 - **Throttle, don't parallelize.** Reddit rate-limits (HTTP 429) bursts of requests. Fetch comment
   threads **serially with a small `sleep`**, not one-agent-per-post. The reddit workflow encodes
   this: a single fetcher agent caches every thread first, then summarizer agents read the cache.
-- **The fetcher must be bounded and self-logging.** It once hit a 429 wall and ground for ~30 min
-  (fixed 10s retries, no cap, detached so invisible). The committed fetcher now: writes
-  **timestamped** progress to `<cacheDir>/fetch.log` (`[$(date -u +%T)] …`), enforces a **hard ~4
-  min network budget**, retries a failed fetch **at most once**, and **skips already-cached** threads
-  (so a crash-resume never re-hammers Reddit). A rate-limit storm must degrade to partial+noted,
-  never a multi-minute hang.
+- **The fetcher must be bounded, self-logging, and self-healing.** It once hit a 429 wall and ground
+  for ~30 min (fixed 10s retries, no cap, detached so invisible); a later run gave up too eagerly and
+  shipped empty discussions. The committed fetcher now: writes **timestamped** progress to
+  `<cacheDir>/fetch.log` (`[$(date -u +%T)] …`); **skips already-cached** threads (crash-resume never
+  re-hammers Reddit); runs a fast **pass 1**, then — for threads Reddit rate-limited (429 → empty) — a
+  **self-healing pass 2** with a ~20s cooldown and wide spacing (Reddit's limiter recovers within a
+  minute or two); all under a **hard ~8 min budget** so it can outlast a brief 429 window yet never
+  hang. Worst case it degrades to partial+noted, never a multi-minute hang. (This replaced a
+  hand-cranked `warm_*.sh` recovery script — the recovery now lives in the workflow.)
 - **`t=week`, not `t=weekly`.** Only `hour|day|week|month|year|all` are valid `t` values; an invalid
   value silently falls back to Reddit's default window.
 
@@ -103,3 +106,6 @@ Routines inside Claude Code — it does not rely on the cloud cron product). To 
 Let the loop schedule its next wake for the next 18:00 (it computes the delay and sleeps until
 then, runs the routine, and repeats). As long as the Claude Code session stays running, the digest
 publishes itself each evening.
+
+The **weekly** Reddit sources (`nixos`, `haskell`) run the same way but self-paced to **Mondays at
+18:00** — `/loop run the nixos routine from ROUTINE.md`, waking at the next Monday 18:00.
