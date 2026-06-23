@@ -28,8 +28,9 @@ to use. Output path is **source-first** for the current date/week:
 
 ## 3. Summarize (fan-out workflow)
 Run the source's committed workflow with the listing as `args`:
-- `hn` → `Workflow({ scriptPath: "workflows/hn-digest-summaries.js", args: {stories:[…]} })` —
-  one subagent per story fetches article + comments.
+- `hn` → `Workflow({ scriptPath: "workflows/hn-digest-summaries.js", args: [ …stories ] })` — the
+  args is the stories **array** directly (each `{rank,id,title,url,points,num_comments}`); one
+  subagent per story fetches article + comments.
 - Reddit → `Workflow({ scriptPath: "workflows/reddit-digest-summaries.js", args: {subreddit, cacheDir, posts:[…]} })`
   — **two-phase**: one fetcher agent caches all threads serially (avoids HTTP 429), then summarizer
   agents read the cache in parallel. Pass a writable `cacheDir`.
