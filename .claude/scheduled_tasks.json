@@ -1,0 +1,15 @@
+{
+  "_comment": "Canonical schedule for this repo's digest routines. Mirrors the cron set via CronCreate. Times are local. The daily trigger is time-guarded (see prompt) so an off-schedule fire (claude -c resume / missed-fire catch-up) skips instead of publishing a wrong-window digest. See ROUTINE.md and CLAUDE.md#scheduling.",
+  "version": 1,
+  "tasks": [
+    {
+      "id": "daily-digest",
+      "cron": "7 18 * * *",
+      "schedule_human": "every day at 18:07 local",
+      "recurring": true,
+      "durable": true,
+      "description": "Run today's due digests: hn (daily) at ~18:00; plus nixos & haskell on Mondays (weekly). Time-guarded against off-schedule triggers.",
+      "prompt": "SCHEDULED DIGEST — target 18:00 local. GUARD FIRST against off-schedule triggers (e.g. a `claude -c` resume replaying this prompt, or a late catch-up of a missed fire): run `date +'%H:%M %u %F'` and read the local hour H. If H is NOT one of 17, 18, or 19 (i.e. not within ~the 18:00 window), STOP IMMEDIATELY — do NOT fetch, write, branch, or open any PR; reply only with: \"Skipped digest: off-schedule trigger at <HH:MM> local (expected ~18:00).\" Then end the turn.\n\nOnly if H is 17/18/19, proceed: run today's due digests per ROUTINE.md — hn (daily); plus nixos and haskell if today is Monday (weekly). For each due source, run the /digest skill (e.g. /digest hn): fetch the ranked listing, summarize via the source's committed workflow, write the source-first file, then open and merge the PR. Skip any source whose digest for the current date/week is already published."
+    }
+  ]
+}
