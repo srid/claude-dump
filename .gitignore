@@ -1,0 +1,2 @@
+# Cron runtime lock (per-session pid/sessionId — not config)
+.claude/scheduled_tasks.lock
