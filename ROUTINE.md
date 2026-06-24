@@ -12,6 +12,12 @@ done from a long-running Claude Code session via `/loop` (times below are local)
 | [`nixos`](#reddit-weekly-digests--nixos-haskell) | [r/NixOS](https://www.reddit.com/r/nixos/) | **weekly, Mon 18:00** | `nixos/YYYY/Www.md` | `workflows/reddit-digest-summaries.js` |
 | [`haskell`](#reddit-weekly-digests--nixos-haskell) | [r/Haskell](https://www.reddit.com/r/haskell/) | **weekly, Mon 18:00** | `haskell/YYYY/Www.md` | `workflows/reddit-digest-summaries.js` |
 
+> **Scheduled runs are time-guarded.** A digest is "top of the last 24 h / 7 d", so it must be
+> produced near its 18:00 slot — not whenever a `claude -c` resume or a missed-fire catch-up happens
+> to replay the prompt. The scheduled trigger checks the local hour and **only fetches within the
+> 18:00 window (hours 17–19)**, otherwise it skips and reports the off-schedule time. (Manual
+> `/digest <source>` runs are exempt — they run on demand.) See [CLAUDE.md](CLAUDE.md#scheduling).
+
 ---
 
 ## `hn` — Hacker News Top Stories Digest

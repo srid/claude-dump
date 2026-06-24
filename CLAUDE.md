@@ -109,3 +109,14 @@ publishes itself each evening.
 
 The **weekly** Reddit sources (`nixos`, `haskell`) run the same way but self-paced to **Mondays at
 18:00** — `/loop run the nixos routine from ROUTINE.md`, waking at the next Monday 18:00.
+
+### Guard scheduled runs against off-schedule triggers
+
+A scheduled digest run can be **delivered at the wrong time** — a `claude -c` resume replays the
+queued prompt, or a fire missed while the session was offline gets caught up hours later. A digest's
+"top of the last 24 h" is time-sensitive, so a 10 AM run is **not** the 6 PM digest. Therefore the
+**scheduled trigger must time-guard before fetching**: read the local hour (`date +%H`) and only
+proceed if it's within the 18:00 window (hours **17–19**); otherwise skip without fetching and report
+`Skipped digest: off-schedule trigger at <HH:MM> (expected ~18:00)`. This guard belongs in the
+**cron prompt** (and is documented in ROUTINE.md), *not* in the `/digest` skill — a manual
+`/digest hn` should always run on demand regardless of the clock.
