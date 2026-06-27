@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/schedule-selfheal.sh",
+            "timeout": 10,
+            "statusMessage": "Reconciling digest schedule…"
+          }
+        ]
+      }
+    ]
+  }
+}
