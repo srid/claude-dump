@@ -9,6 +9,20 @@ A dumping ground for automated news digests, generated from a **long-running Cla
 Each routine is specified in [ROUTINE.md](ROUTINE.md), invokable via the [`/digest`](.claude/skills/digest/SKILL.md)
 skill, and produces a dated artifact in the **source-first** layout (see *File layout* below).
 
+## Committing: PRs only for content, push everything else directly
+
+**Open a PR only for digest *content*** — the dated artifacts (`hn/…`, `nixos/…`, `haskell/…`). The
+merged-PR notification to repo watchers is the routine's delivery mechanism, so each day's digest
+ships as a branch → PR → merge.
+
+**Everything else is pushed straight to `master`** — no PR. That means workflow `.js`, skills,
+hooks, `.claude/` config, `ROUTINE.md`, `README.md`, this file, and any other plumbing. These aren't
+content for watchers; a PR for them is just noise. Commit on `master` and `git push`.
+
+> Edge case: if you improve a workflow *during* a digest run, fold that change into the same content
+> PR as the day's artifact (it's already open). A standalone plumbing change with no digest attached
+> goes directly to `master`.
+
 ## Dynamic workflows are committed and self-improving
 
 The dynamic-workflow JavaScript that powers a routine — e.g.
